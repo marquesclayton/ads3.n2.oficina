@@ -54,7 +54,7 @@ erDiagram
     CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
     CATALOGO_PECAS ||--o{ ESTOQUE_MOV : "movimenta"
 ````
-````mermaid
+```mermaid
 classDiagram
     class Usuario {
         +UUID id
