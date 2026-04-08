@@ -2,36 +2,45 @@
 ### 🎓 Projeto Didático - Faculdade de Tecnologia Senai Fatesg
 
 ![PostgreSQL](https://shields.io)
+![Security](https://shields.io)
 ![Academic](https://shields.io)
 
 ## 📌 Sobre o Projeto
-O **AutoManager** é um sistema desenvolvido como material de estudo para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. O objetivo é aplicar conceitos de modelagem de dados, integridade referencial, tipos complexos (ENUM) e identificadores únicos (UUID) em um cenário real de oficina mecânica.
+O **AutoManager** é uma solução de banco de dados desenvolvida como material de estudo e prática para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. 
 
-### 🎯 Motivação e Objetivos Acadêmicos
-- **Modelagem Relacional:** Implementação de relacionamentos 1:N e N:M.
-- **Tipagem Avançada:** Uso de extensões (`pgcrypto`), `TIMESTAMPTZ` e campos gerados (`GENERATED ALWAYS`).
-- **Padrões de Identificação:** Substituição de PKs sequenciais por UUIDs para segurança e distribuição de dados.
-- **Documentação Técnica:** Prática de escrita de requisitos e diagramação (Mermaid).
+O projeto simula o ecossistema de uma oficina mecânica, cobrindo desde o controle de acesso de funcionários até a gestão de estoque e faturamento de ordens de serviço.
+
+### 🎯 Objetivos Acadêmicos
+- **Segurança da Informação:** Implementação de autenticação com armazenamento seguro (Hash + Salt).
+- **Modelagem Relacional:** Aplicação de chaves primárias UUID, integridade referencial e tipos complexos (ENUM).
+- **Otimização:** Uso de índices estratégicos e colunas geradas (`GENERATED ALWAYS`).
+- **Documentação Técnica:** Uso de Mermaid.js para representação de modelos de classe e ER.
 
 ---
 
 ## 📑 Requisitos do Sistema
 
 ### Requisitos Funcionais (RF)
-- **RF01:** Cadastrar clientes e seus múltiplos contatos (telefones e e-mails).
-- **RF02:** Registrar veículos vinculados a clientes com validação de placa única.
-- **RF03:** Gerenciar Ordens de Serviço (OS) com estados: `aberta`, `em_servico`, `aguardando_pecas`, `finalizada` e `cancelada`.
-- **RF04:** Elaborar orçamentos detalhando separadamente Mão de Obra (Serviços) e Peças.
-- **RF05:** Controle de Estoque com alertas de nível baixo e registro histórico de movimentações.
-- **RF06:** Registro de pagamentos associados à OS ou Orçamentos.
+- **RF01 (Autenticação):** O sistema deve autenticar usuários utilizando hashes criptográficos.
+- **RF02 (Clientes):** Cadastro completo de clientes com múltiplos meios de contato e endereços.
+- **RF03 (Veículos):** Gerenciamento de frotas por cliente com identificação única por placa.
+- **RF04 (Ordens de Serviço):** Abertura e controle de status de manutenção (Aberta, Em Serviço, etc).
+- **RF05 (Orçamentos):** Composição de custos separando mão de obra de peças.
+- **RF06 (Estoque):** Baixa automática em itens de catálogo e histórico de movimentações.
+
+### Requisitos Não Funcionais (RNF)
+- **RNF01:** Persistência em PostgreSQL 13+.
+- **RNF02:** Identificadores universais (UUID) para evitar previsibilidade de IDs.
+- **RNF03:** Registro de data/hora de criação e atualização em todas as entidades.
 
 ---
 
-## 🏗️ Arquitetura e Modelagem
+## 🏗️ Modelagem Técnica
 
-### 1. Diagrama Entidade-Relacionamento (DER - Lógico)
+### 1. Modelo Entidade-Relacionamento (DER)
 ```mermaid
 erDiagram
+    USUARIOS ||--o{ ORDEM_SERVICO : "atende"
     CLIENTES ||--o{ CONTATOS_TELEFONICOS : "possui"
     CLIENTES ||--o{ CONTATOS_EMAIL : "possui"
     CLIENTES ||--o{ VEICULOS : "tem"
@@ -44,17 +53,23 @@ erDiagram
     CATALOGO_SERVICOS ||--o{ ITENS_ORCAMENTO_SERVICO : "referencia"
     CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
     CATALOGO_PECAS ||--o{ ESTOQUE_MOV : "movimenta"
-
 ````
-```mermaid
+````mermaid
 classDiagram
+    class Usuario {
+        +UUID id
+        +String username
+        -String password_hash
+        -String salt
+        +autenticar(String senha) bool
+    }
+
     class Cliente {
         +UUID id
         +String cpf
         +String nome
-        +String enderecoCompleto
-        +adicionarContato()
-        +listarVeiculos()
+        +String endereco
+        +adicionarVeiculo(Veiculo v)
     }
 
     class Veiculo {
@@ -62,55 +77,65 @@ classDiagram
         +String placa
         +String modelo
         +String fabricante
-        +int ano
-        +registrarManutencao()
     }
 
     class OrdemServico {
         +UUID id
-        +DateTime dataEntrada
         +Enum status
-        +String descricaoProblema
-        +atualizarStatus(novoStatus)
-        +gerarOrcamento()
+        +DateTime dataEntrada
+        +abrirOS(Usuario atendente)
+        +finalizarOS()
     }
 
     class Orcamento {
         +UUID id
         +Decimal totalPecas
         +Decimal totalMaoObra
-        +Decimal totalGeral
         +Boolean aprovado
-        +calcularTotais()
-        +aprovar()
-    }
-
-    class ItemOrcamentoPeca {
-        +UUID id
-        +int quantidade
-        +Decimal precoUnitario
-        +Decimal subtotal
+        +calcularTotal()
     }
 
     class CatalogoPeca {
         +UUID id
         +String sku
-        +String descricao
-        +int estoqueAtual
-        +alertarEstoqueBaixo()
+        +int estoque
+        +validarDisponibilidade()
     }
 
-    class Pagamento {
-        +UUID id
-        +Decimal valor
-        +String metodo
-        +DateTime dataPagamento
-    }
+    Usuario "1" -- "*" OrdemServico : registra
+    Cliente "1" -- "*" Veiculo : proprietario
+    Veiculo "1" -- "*" OrdemServico : objeto
+    OrdemServico "1" -- "*" Orcamento : possui
+    Orcamento "1" -- "*" CatalogoPeca : consome
+````
+````mermaid
+sql
+-- 1. Habilitar a extensão para criptografia (caso ainda não tenha feito)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-    Cliente "1" -- "*" Veiculo : proprietário
-    Veiculo "1" -- "*" OrdemServico : objeto_servico
-    OrdemServico "1" -- "*" Orcamento : propostas
-    Orcamento "1" -- "*" ItemOrcamentoPeca : compõe
-    ItemOrcamentoPeca "*" -- "1" CatalogoPeca : referencia
-    OrdemServico "1" -- "*" Pagamento : liquidação
+-- 2. Tabela de Usuários (Funcionários/Mecânicos)
+CREATE TABLE usuarios (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL, -- Armazena a senha criptografada (Hash)
+    salt TEXT NOT NULL,          -- Salt único gerado pelo gen_salt()
+    ativo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 
+-- 3. Adicionar relacionamento na Ordem de Serviço (Opcional, mas recomendado)
+-- Isso permite saber qual usuário/atendente abriu a OS
+ALTER TABLE ordem_servico 
+ADD COLUMN usuario_id UUID REFERENCES usuarios(id);
+
+-- 4. Exemplo de como inserir um usuário com HASH e SALT (Bcrypt)
+-- O 'bf' no gen_salt indica o uso do algoritmo Blowfish (Bcrypt)
+INSERT INTO usuarios (username, email, salt, password_hash)
+VALUES (
+    'admin_fatesg', 
+    'admin@fatesg.edu.br', 
+    'bf', -- Referência ao algoritmo
+    crypt('senha_segura_123', gen_salt('bf'))
+);
