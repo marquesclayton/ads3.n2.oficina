@@ -6,15 +6,26 @@
 ![Academic](https://shields.io)
 
 ## 📌 Sobre o Projeto
-O **AutoManager** é uma solução de banco de dados desenvolvida como material de estudo e prática para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. 
-
-O projeto simula o ecossistema de uma oficina mecânica, cobrindo desde o controle de acesso de funcionários até a gestão de estoque e faturamento de ordens de serviço.
+O **AutoManager** é um ecossistema de banco de dados desenvolvido para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. O projeto foca em padrões profissionais de modelagem, segurança e auditoria de dados.
 
 ### 🎯 Objetivos Acadêmicos
-- **Segurança da Informação:** Implementação de autenticação com armazenamento seguro (Hash + Salt).
-- **Modelagem Relacional:** Aplicação de chaves primárias UUID, integridade referencial e tipos complexos (ENUM).
-- **Otimização:** Uso de índices estratégicos e colunas geradas (`GENERATED ALWAYS`).
-- **Documentação Técnica:** Uso de Mermaid.js para representação de modelos de classe e ER.
+- **Segurança:** Autenticação robusta com **Hash** e **Salt** (via `pgcrypto`).
+- **Rastreabilidade (Auditoria):** Controle rigoroso de quem criou ou alterou cada registro no sistema.
+- **Modelagem Avançada:** Uso de UUIDs, tipos enumerados (ENUM) e colunas geradas.
+- **Performance:** Estratégias de indexação para buscas otimizadas.
+
+---
+
+## 🔐 Segurança e Autenticação
+O sistema utiliza criptografia de ponta no banco de dados para proteção de credenciais. As senhas são processadas com o algoritmo **Bcrypt**, garantindo que nem mesmo o administrador do banco tenha acesso às senhas em texto claro.
+
+---
+
+## 📑 Auditoria de Dados (Traceability)
+Para garantir a conformidade e a segurança operacional, as tabelas principais contêm colunas de auditoria:
+- `created_at` / `updated_at`: Registram automaticamente o momento da operação.
+- `created_by`: Referencia o **Usuário** responsável pela criação do registro.
+- `updated_by`: Referencia o **Usuário** que realizou a última modificação.
 
 ---
 
@@ -40,19 +51,21 @@ O projeto simula o ecossistema de uma oficina mecânica, cobrindo desde o contro
 ### 1. Modelo Entidade-Relacionamento (DER)
 ```mermaid
 erDiagram
+    USUARIOS ||--o{ CLIENTES : "cadastra"
     USUARIOS ||--o{ ORDEM_SERVICO : "atende"
-    CLIENTES ||--o{ CONTATOS_TELEFONICOS : "possui"
-    CLIENTES ||--o{ CONTATOS_EMAIL : "possui"
-    CLIENTES ||--o{ VEICULOS : "tem"
-    VEICULOS ||--o{ ORDEM_SERVICO : "registra"
-    ORDEM_SERVICO ||--o{ ORCAMENTOS : "gera"
-    ORDEM_SERVICO ||--o{ ESTOQUE_MOV : "gera"
-    ORDEM_SERVICO ||--o{ PAGAMENTOS : "recebe"
-    ORCAMENTOS ||--o{ ITENS_ORCAMENTO_SERVICO : "contém"
+    CLIENTES ||--o{ VEICULOS : "possui"
+    VEICULOS ||--o{ ORDEM_SERVICO : "objeto_servico"
+    ORDEM_SERVICO ||--o{ ORCAMENTOS : "possui"
     ORCAMENTOS ||--o{ ITENS_ORCAMENTO_PECA : "contém"
-    CATALOGO_SERVICOS ||--o{ ITENS_ORCAMENTO_SERVICO : "referencia"
     CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
-    CATALOGO_PECAS ||--o{ ESTOQUE_MOV : "movimenta"
+    ORDEM_SERVICO ||--o{ PAGAMENTOS : "gera"
+
+    USUARIOS {
+        uuid id PK
+        string username
+        string password_hash
+        string salt
+    }
 ````
 ```mermaid
 classDiagram
@@ -69,6 +82,8 @@ classDiagram
         +String cpf
         +String nome
         +String endereco
+        +UUID created_by
+        +DateTime created_at
         +adicionarVeiculo(Veiculo v)
     }
 
@@ -77,12 +92,16 @@ classDiagram
         +String placa
         +String modelo
         +String fabricante
+        +UUID created_by
+        +DateTime created_at
     }
 
     class OrdemServico {
         +UUID id
         +Enum status
         +DateTime dataEntrada
+        +UUID created_by
+        +DateTime created_at
         +abrirOS(Usuario atendente)
         +finalizarOS()
     }
@@ -92,6 +111,8 @@ classDiagram
         +Decimal totalPecas
         +Decimal totalMaoObra
         +Boolean aprovado
+        +UUID created_by
+        +DateTime created_at
         +calcularTotal()
     }
 
@@ -99,6 +120,8 @@ classDiagram
         +UUID id
         +String sku
         +int estoque
+        +UUID created_by
+        +DateTime created_at
         +validarDisponibilidade()
     }
 
