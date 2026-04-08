@@ -109,32 +109,169 @@ classDiagram
     Orcamento "1" -- "*" CatalogoPeca : consome
 ````
 ```sql
--- 1. Habilitar a extensão para criptografia (caso ainda não tenha feito)
+-- ==========================================================
+-- PROJETO DIDÁTICO: AUTOMANAGER (FATESG SENAI GO)
+-- AUDITORIA COMPLETA: created_by, updated_by, datas
+-- ==========================================================
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- 2. Tabela de Usuários (Funcionários/Mecânicos)
+-- 1. TABELA DE USUÁRIOS
+-- (Esta é a única que não referencia a si mesma no created_by para evitar recursão infinita no primeiro insert)
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL, -- Armazena a senha criptografada (Hash)
-    salt TEXT NOT NULL,          -- Salt único gerado pelo gen_salt()
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
     ativo BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. Adicionar relacionamento na Ordem de Serviço (Opcional, mas recomendado)
--- Isso permite saber qual usuário/atendente abriu a OS
-ALTER TABLE ordem_servico 
-ADD COLUMN usuario_id UUID REFERENCES usuarios(id);
-
--- 4. Exemplo de como inserir um usuário com HASH e SALT (Bcrypt)
--- O 'bf' no gen_salt indica o uso do algoritmo Blowfish (Bcrypt)
-INSERT INTO usuarios (username, email, salt, password_hash)
-VALUES (
-    'admin_fatesg', 
-    'admin@fatesg.edu.br', 
-    'bf', -- Referência ao algoritmo
-    crypt('senha_segura_123', gen_salt('bf'))
+-- 2. TABELA DE CLIENTES
+CREATE TABLE clientes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cpf CHAR(11) NOT NULL UNIQUE,
+    nome VARCHAR(125) NOT NULL,
+    logradouro VARCHAR(125),
+    numero VARCHAR(7),
+    complemento VARCHAR(100),
+    bairro VARCHAR(100),
+    cidade VARCHAR(100),
+    estado CHAR(2),
+    cep VARCHAR(10),
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id),
+    updated_by UUID REFERENCES usuarios(id)
 );
+
+-- 3. CONTATOS (Telefones e Emails)
+CREATE TABLE contatos_telefonicos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+    tipo VARCHAR(20),
+    numero VARCHAR(50) NOT NULL,
+    preferencial BOOLEAN DEFAULT FALSE,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id)
+);
+
+CREATE TABLE contatos_email (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+    tipo VARCHAR(20),
+    email VARCHAR(255) NOT NULL,
+    preferencial BOOLEAN DEFAULT FALSE,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id)
+);
+
+-- 4. VEÍCULOS
+CREATE TABLE veiculos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
+    placa VARCHAR(20) NOT NULL UNIQUE,
+    modelo VARCHAR(55),
+    fabricante VARCHAR(55),
+    ano INTEGER,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id),
+    updated_by UUID REFERENCES usuarios(id)
+);
+
+-- 5. ORDEM DE SERVIÇO
+CREATE TYPE ordem_status AS ENUM ('aberta','em_servico','aguardando_pecas','finalizada','cancelada');
+
+CREATE TABLE ordem_servico (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    veiculo_id UUID NOT NULL REFERENCES veiculos(id) ON DELETE CASCADE,
+    data_entrada TIMESTAMPTZ DEFAULT now(),
+    data_prevista_saida TIMESTAMPTZ,
+    data_entrega TIMESTAMPTZ,
+    status ordem_status DEFAULT 'aberta',
+    descricao_problema TEXT,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id), -- Atendente/Mecânico que abriu
+    updated_by UUID REFERENCES usuarios(id)  -- Quem alterou o status
+);
+
+-- 6. CATÁLOGOS (Serviços e Peças)
+CREATE TABLE catalogo_servicos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    codigo VARCHAR(50) UNIQUE,
+    descricao TEXT NOT NULL,
+    preco_padrao NUMERIC(12,2),
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id)
+);
+
+CREATE TABLE catalogo_pecas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sku VARCHAR(100) UNIQUE,
+    descricao TEXT NOT NULL,
+    preco NUMERIC(12,2),
+    estoque INTEGER DEFAULT 0,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id),
+    updated_by UUID REFERENCES usuarios(id)
+);
+
+-- 7. ORÇAMENTOS
+CREATE TABLE orcamentos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ordem_id UUID NOT NULL REFERENCES ordem_servico(id) ON DELETE CASCADE,
+    total NUMERIC(12,2) DEFAULT 0,
+    aprovado BOOLEAN DEFAULT FALSE,
+    -- Auditoria
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    created_by UUID REFERENCES usuarios(id),
+    updated_by UUID REFERENCES usuarios(id)
+);
+
+-- 8. ITENS (Pecçs e Serviços)
+CREATE TABLE itens_orcamento_servico (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    orcamento_id UUID NOT NULL REFERENCES orcamentos(id) ON DELETE CASCADE,
+    servico_id UUID NOT NULL REFERENCES catalogo_servicos(id),
+    quantidade INTEGER DEFAULT 1,
+    preco_unit NUMERIC(12,2),
+    subtotal NUMERIC(12,2) GENERATED ALWAYS AS (quantidade * preco_unit) STORED
+);
+
+CREATE TABLE itens_orcamento_peca (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    orcamento_id UUID NOT NULL REFERENCES orcamentos(id) ON DELETE CASCADE,
+    peca_id UUID NOT NULL REFERENCES catalogo_pecas(id),
+    quantidade INTEGER NOT NULL,
+    preco_unit NUMERIC(12,2),
+    subtotal NUMERIC(12,2) GENERATED ALWAYS AS (quantidade * preco_unit) STORED
+);
+
+-- 9. PAGAMENTOS
+CREATE TABLE pagamentos (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ordem_id UUID REFERENCES ordem_servico(id),
+    valor NUMERIC(12,2) NOT NULL,
+    metodo VARCHAR(50),
+    data_pagamento TIMESTAMPTZ DEFAULT now(),
+    -- Auditoria
+    created_by UUID REFERENCES usuarios(id)
+);
+
+-- Índices principais
+CREATE INDEX idx_clientes_cpf ON clientes(cpf);
+CREATE INDEX idx_veiculos_placa ON veiculos(placa);
+CREATE INDEX idx_usuarios_email ON usuarios(email);
