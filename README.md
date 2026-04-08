@@ -108,8 +108,7 @@ classDiagram
     OrdemServico "1" -- "*" Orcamento : possui
     Orcamento "1" -- "*" CatalogoPeca : consome
 ````
-```mermaid
-sql
+```sql
 -- 1. Habilitar a extensão para criptografia (caso ainda não tenha feito)
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
