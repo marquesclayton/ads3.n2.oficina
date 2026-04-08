@@ -1,48 +1,35 @@
-# ads3.n2.oficina
 # 🛠️ Sistema de Gestão para Oficinas Mecânicas (AutoManager)
+### 🎓 Projeto Didático - Faculdade de Tecnologia Senai Fatesg
 
 ![PostgreSQL](https://shields.io)
-![Status](https://shields.io)
+![Academic](https://shields.io)
 
 ## 📌 Sobre o Projeto
-O **AutoManager** é uma solução robusta para o gerenciamento operacional e financeiro de oficinas mecânicas e centros automotivos. O projeto nasceu da necessidade de centralizar o fluxo desde a entrada do veículo até o faturamento, garantindo rastreabilidade de peças e histórico de manutenções.
+O **AutoManager** é um sistema desenvolvido como material de estudo para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. O objetivo é aplicar conceitos de modelagem de dados, integridade referencial, tipos complexos (ENUM) e identificadores únicos (UUID) em um cenário real de oficina mecânica.
 
-### 🎯 Motivação
-Oficinas pequenas e médias frequentemente sofrem com a falta de controle de estoque e orçamentos informais. Este sistema visa:
-- Profissionalizar o atendimento ao cliente.
-- Evitar perdas financeiras com controle rigoroso de estoque e insumos.
-- Gerar histórico de serviços para fidelização e garantia.
+### 🎯 Motivação e Objetivos Acadêmicos
+- **Modelagem Relacional:** Implementação de relacionamentos 1:N e N:M.
+- **Tipagem Avançada:** Uso de extensões (`pgcrypto`), `TIMESTAMPTZ` e campos gerados (`GENERATED ALWAYS`).
+- **Padrões de Identificação:** Substituição de PKs sequenciais por UUIDs para segurança e distribuição de dados.
+- **Documentação Técnica:** Prática de escrita de requisitos e diagramação (Mermaid).
 
 ---
 
-## 📑 Documentação de Requisitos
+## 📑 Requisitos do Sistema
 
 ### Requisitos Funcionais (RF)
-- **RF01:** O sistema deve permitir o cadastro de clientes com múltiplos meios de contato.
-- **RF02:** Deve ser possível gerenciar veículos vinculados a um proprietário único.
-- **RF03:** O sistema deve permitir a abertura de Ordens de Serviço (OS) com status dinâmicos.
-- **RF04:** Deve ser possível criar múltiplos orçamentos para uma mesma OS (opções de peças/marcas).
-- **RF05:** O sistema deve baixar automaticamente o estoque ao aprovar um orçamento.
-- **RF06:** Deve permitir o registro de pagamentos parciais ou totais vinculados à OS.
-
-### Requisitos Não Funcionais (RNF)
-- **RNF01:** Persistência de dados em PostgreSQL.
-- **RNF02:** Uso de UUID (Universally Unique Identifier) para todas as chaves primárias, garantindo segurança e escalabilidade.
-- **RNF03:** Indexação de campos críticos (CPF, Placa, E-mail) para alta performance em buscas.
-
----
-
-## 🔄 Fluxo de Caso de Uso (Resumido)
-1. **Recepção:** Cliente chega -> Cadastro/Busca de Cliente -> Cadastro de Veículo -> Abertura de OS (Status: Aberta).
-2. **Orçamentação:** Mecânico avalia -> Lança Itens (Serviços/Peças) -> Gera Orçamento -> Cliente Aprova.
-3. **Execução:** Status da OS muda para 'Em Serviço' -> Movimentação de Estoque efetuada.
-4. **Finalização:** OS Finalizada -> Registro de Pagamento -> Entrega do Veículo.
+- **RF01:** Cadastrar clientes e seus múltiplos contatos (telefones e e-mails).
+- **RF02:** Registrar veículos vinculados a clientes com validação de placa única.
+- **RF03:** Gerenciar Ordens de Serviço (OS) com estados: `aberta`, `em_servico`, `aguardando_pecas`, `finalizada` e `cancelada`.
+- **RF04:** Elaborar orçamentos detalhando separadamente Mão de Obra (Serviços) e Peças.
+- **RF05:** Controle de Estoque com alertas de nível baixo e registro histórico de movimentações.
+- **RF06:** Registro de pagamentos associados à OS ou Orçamentos.
 
 ---
 
 ## 🏗️ Arquitetura e Modelagem
 
-### 1. Modelo Entidade-Relacionamento (Lógico)
+### 1. Diagrama Entidade-Relacionamento (DER - Lógico)
 ```mermaid
 erDiagram
     CLIENTES ||--o{ CONTATOS_TELEFONICOS : "possui"
@@ -57,6 +44,7 @@ erDiagram
     CATALOGO_SERVICOS ||--o{ ITENS_ORCAMENTO_SERVICO : "referencia"
     CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
     CATALOGO_PECAS ||--o{ ESTOQUE_MOV : "movimenta"
+
 ````
 ```mermaid
 classDiagram
@@ -64,24 +52,65 @@ classDiagram
         +UUID id
         +String cpf
         +String nome
-        +String endereco
+        +String enderecoCompleto
+        +adicionarContato()
+        +listarVeiculos()
     }
+
     class Veiculo {
         +UUID id
         +String placa
         +String modelo
+        +String fabricante
+        +int ano
+        +registrarManutencao()
     }
+
     class OrdemServico {
         +UUID id
         +DateTime dataEntrada
         +Enum status
-        +List orcamentos
+        +String descricaoProblema
+        +atualizarStatus(novoStatus)
+        +gerarOrcamento()
     }
+
     class Orcamento {
         +UUID id
-        +Decimal total
+        +Decimal totalPecas
+        +Decimal totalMaoObra
+        +Decimal totalGeral
         +Boolean aprovado
+        +calcularTotais()
+        +aprovar()
     }
-    Cliente "1" *-- "many" Veiculo
-    Veiculo "1" *-- "many" OrdemServico
-    OrdemServico "1" *-- "many" Orcamento
+
+    class ItemOrcamentoPeca {
+        +UUID id
+        +int quantidade
+        +Decimal precoUnitario
+        +Decimal subtotal
+    }
+
+    class CatalogoPeca {
+        +UUID id
+        +String sku
+        +String descricao
+        +int estoqueAtual
+        +alertarEstoqueBaixo()
+    }
+
+    class Pagamento {
+        +UUID id
+        +Decimal valor
+        +String metodo
+        +DateTime dataPagamento
+    }
+
+    Cliente "1" -- "*" Veiculo : proprietário
+    Veiculo "1" -- "*" OrdemServico : objeto_servico
+    OrdemServico "1" -- "*" Orcamento : propostas
+    Orcamento "1" -- "*" ItemOrcamentoPeca : compõe
+    ItemOrcamentoPeca "*" -- "1" CatalogoPeca : referencia
+    OrdemServico "1" -- "*" Pagamento : liquidação
+
