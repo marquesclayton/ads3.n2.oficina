@@ -57,3 +57,30 @@ erDiagram
     CATALOGO_SERVICOS ||--o{ ITENS_ORCAMENTO_SERVICO : "referencia"
     CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
     CATALOGO_PECAS ||--o{ ESTOQUE_MOV : "movimenta"
+
+classDiagram
+    class Cliente {
+        +UUID id
+        +String cpf
+        +String nome
+        +String endereco
+    }
+    class Veiculo {
+        +UUID id
+        +String placa
+        +String modelo
+    }
+    class OrdemServico {
+        +UUID id
+        +DateTime dataEntrada
+        +Enum status
+        +List orcamentos
+    }
+    class Orcamento {
+        +UUID id
+        +Decimal total
+        +Boolean aprovado
+    }
+    Cliente "1" *-- "many" Veiculo
+    Veiculo "1" *-- "many" OrdemServico
+    OrdemServico "1" *-- "many" Orcamento
