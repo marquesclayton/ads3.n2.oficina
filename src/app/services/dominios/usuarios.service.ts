@@ -5,7 +5,6 @@ import { catchError, tap } from 'rxjs/operators';
 
 import { ApiBaseService } from '../../core/http/api-base.service';
 import { Usuario } from '../../modelos/usuario';
-import { generateUuid } from '../../core/utils/uuid.util';
 
 @Injectable({
   providedIn: 'root'
@@ -13,16 +12,7 @@ import { generateUuid } from '../../core/utils/uuid.util';
 export class UsuariosService extends ApiBaseService {
   private readonly endpoint = 'usuarios';
 
-  // Mock usado apenas como fallback quando a API não estiver disponível (somente para testes).
-  private usuariosMock: Usuario[] = [
-    {
-      id: generateUuid(),
-      nome: 'Ana Atendimento',
-      login: 'ana.atendimento',
-      email: 'ana@oficina.local',
-      perfil: 'atendente'
-    }
-  ];
+  private usuarios: Usuario[] = [];
 
   constructor(http: HttpClient) {
     super(http);
@@ -31,7 +21,7 @@ export class UsuariosService extends ApiBaseService {
   listar(): Observable<Usuario[]> {
     return this.get<Usuario[]>(this.endpoint).pipe(
       tap((usuarios) => {
-        this.usuariosMock = [...usuarios];
+        this.usuarios = [...usuarios];
       }),
       catchError((err) => throwError(() => err))
     );

@@ -5,23 +5,13 @@ import { catchError, tap } from 'rxjs/operators';
 
 import { ApiBaseService } from '../../core/http/api-base.service';
 import { Cliente } from '../../modelos/cliente';
-import { generateUuid } from '../../core/utils/uuid.util';
-
 @Injectable({
   providedIn: 'root'
 })
 export class ClientesService extends ApiBaseService {
   private readonly endpoint = 'clientes';
 
-  // Mock usado apenas como fallback quando a API não estiver disponível (somente para testes).
-  private clientesMock: Cliente[] = [
-    {
-      id: generateUuid(),
-      nome: 'Carlos Silva',
-      cpf: '12345678901',
-      telefone: '(62) 99999-0001'
-    }
-  ];
+  private clientes: Cliente[] = [];
 
 
   constructor(http: HttpClient) {
@@ -31,7 +21,7 @@ export class ClientesService extends ApiBaseService {
   listar(): Observable<Cliente[]> {
     return this.get<Cliente[]>(this.endpoint).pipe(
       tap((clientes) => {
-        this.clientesMock = [...clientes];
+        this.clientes = [...clientes];
       }),
       catchError((err) => throwError(() => err))
     );
@@ -40,7 +30,7 @@ export class ClientesService extends ApiBaseService {
   adicionar(cliente: Omit<Cliente, 'id'>): Observable<Cliente> {
     return this.post<Cliente, Omit<Cliente, 'id'>>(this.endpoint, cliente).pipe(
       tap((clienteCriado) => {
-        this.clientesMock = [...this.clientesMock, clienteCriado];
+        this.clientes = [...this.clientes, clienteCriado];
       }),
       catchError((err) => throwError(() => err))
     );

@@ -2,7 +2,7 @@
 
 Sistema acadêmico para **gestão de oficina mecânica**, desenvolvido com **Angular 23** (linha de migração no canal `next`), **TypeScript** e modelagem relacional em **PostgreSQL**, com foco em organização didática, separação por domínios e preparação para apresentação técnica em sala de aula.
 
-> **Objetivo desta documentação**: refletir o estado atual do projeto, padronizar a nomenclatura para **CarRepair**, remover a ideia de _mock como fallback operacional_ e consolidar uma visão clara da arquitetura, domínio, banco de dados, fluxos, extensibilidade e operação do sistema.
+> **Objetivo desta documentação**: Refletir o estado atual do projeto, padronizar a nomenclatura para **CarRepair**, e consolidar uma visão clara da arquitetura, domínio, banco de dados, fluxos, extensibilidade e operação do sistema.
 
 ---
 
@@ -16,7 +16,8 @@ O **CarRepair** é uma aplicação de apoio à operação de uma oficina mecâni
 - **Mecânicos** responsáveis pela execução técnica
 - **Ordens de Serviço (OS)** que centralizam atendimento, diagnóstico, serviços executados e peças aplicadas
 
-No frontend, a aplicação foi estruturada em páginas standalone e serviços por domínio. A comunicação com a API é centralizada por uma camada HTTP base, e os erros são tratados por um **interceptor global**, responsável por transformar falhas técnicas em mensagens amigáveis para o usuário.
+No frontend, a aplicação foi estruturada em páginas standalone e serviços por domínio.
+A comunicação com a API é centralizada por uma camada HTTP base, e os erros são tratados por um **interceptor global**, responsável por transformar falhas técnicas em mensagens amigáveis para o usuário.
 
 ---
 
@@ -57,9 +58,7 @@ Atualmente, o projeto está organizado para operar com uma API configurada via a
 - falhas de requisição são tratadas no `HttpErrorInterceptor`
 - mensagens amigáveis são exibidas pela camada compartilhada `MensagemService` + `MensagensComponent`
 
-### 3.1 Observação importante sobre mocks
-
-Há ainda **estruturas internas residuais de mock** em alguns serviços de domínio, mantidas apenas como vestígio de evolução do projeto, mas **não devem ser consideradas fallback funcional da aplicação**.
+### 3.1 Observação importante
 
 A diretriz arquitetural atual do projeto é:
 
@@ -184,10 +183,7 @@ Contém infraestrutura HTTP compartilhada, incluindo:
 - serviço base para chamadas REST
 - interceptor para tratamento centralizado de erros
 
-### 7.6 `core/utils/`
-Contém utilitários auxiliares, como geradores de UUID e funções de apoio.
-
-### 7.7 `core/validacoes/`
+### 7.6  `core/validacoes/`
 Reservado para regras e validações reutilizáveis do sistema.
 
 ---
@@ -873,41 +869,14 @@ localStorage.setItem('authToken', 'seu-token-jwt');
 
 ---
 
-## 24. Como apresentar o projeto em sala de aula
-
-Uma sequência recomendada para PowerPoint é:
-
-1. problema de negócio da oficina
-2. objetivo do sistema CarRepair
-3. visão geral da solução
-4. arquitetura em camadas
-5. domínios do negócio
-6. rotas e telas
-7. serviços e consumo de API
-8. interceptor e tratamento de erros
-9. banco de dados e DDL
-10. DER e MER
-11. fluxo de abertura de ordem de serviço
-12. possibilidades de evolução
-
-### Sugestão de narrativa didática
-- comece pelo problema real
-- mostre as entidades centrais
-- explique a responsabilidade de cada camada
-- demonstre como o frontend conversa com a API
-- destaque que o tratamento de erro foi centralizado
-- conclua mostrando como o sistema pode crescer sem perder organização
-
----
-
-## 25. Como criar novas features
+## 24. Como criar novas features
 
 Para evoluir o CarRepair mantendo o padrão atual, siga este fluxo.
 
-### 25.1 Definir o domínio
+### 24.1 Definir o domínio
 Exemplo: `pagamentos`, `orcamentos`, `estoque`, `agendamentos`.
 
-### 25.2 Criar o modelo
+### 24.2 Criar o modelo
 Adicionar uma interface em `src/app/modelos/`.
 
 Exemplo:
@@ -921,7 +890,7 @@ export interface Pagamento {
 }
 ```
 
-### 25.3 Criar o serviço de domínio
+### 24.3 Criar o serviço de domínio
 Criar novo serviço em `src/app/services/dominios/`, herdando de `ApiBaseService`.
 
 Exemplo de responsabilidades:
@@ -931,19 +900,19 @@ Exemplo de responsabilidades:
 - atualizar
 - remover
 
-### 25.4 Criar a página
+### 24.4 Criar a página
 Adicionar novo componente em `src/app/paginas/`.
 
-### 25.5 Registrar rota
+### 24.5 Registrar rota
 Adicionar a rota no arquivo `src/app/app.routes.ts`.
 
-### 25.6 Integrar mensagens
+### 24.6 Integrar mensagens
 Delegar erros ao interceptor e usar `MensagemService` apenas quando necessário para mensagens de sucesso, aviso ou informação.
 
-### 25.7 Atualizar banco
+### 24.7 Atualizar banco
 Evoluir o DDL ou criar scripts de migração no backend.
 
-### 25.8 Atualizar documentação
+### 24.8 Atualizar documentação
 Sempre atualizar este README com:
 - objetivo da feature
 - domínio impactado
@@ -954,7 +923,7 @@ Sempre atualizar este README com:
 
 ---
 
-## 26. Boas práticas recomendadas para continuidade
+## 25. Boas práticas recomendadas para continuidade
 
 - manter nomenclatura padronizada em **CarRepair**
 - remover gradualmente vestígios de mocks dos serviços
@@ -968,10 +937,9 @@ Sempre atualizar este README com:
 
 ---
 
-## 27. Melhorias arquiteturais sugeridas
+## 26. Melhorias arquiteturais sugeridas
 
 ### Curto prazo
-- remover definitivamente arrays mock remanescentes dos serviços
 - renomear título exibido em `App` para `CarRepair`
 - alinhar testes que ainda validam `Oficina Acadêmica`
 - padronizar nome do projeto no `angular.json`
@@ -993,7 +961,7 @@ Sempre atualizar este README com:
 
 ---
 
-## 28. Conclusão
+## 27. Conclusão
 
 O **CarRepair** é uma base acadêmica consistente para demonstrar como estruturar uma aplicação web de oficina mecânica com frontend Angular e persistência relacional.
 
