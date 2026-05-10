@@ -1,5 +1,5 @@
 export interface Mecanico {
-  id: number;
+  id: string;
   nome: string;
   especialidade: string;
   telefone: string;

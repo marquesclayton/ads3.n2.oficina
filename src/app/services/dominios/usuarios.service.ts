@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { ApiBaseService } from '../../core/http/api-base.service';
 import { Usuario } from '../../modelos/usuario';
+import { generateUuid } from '../../core/utils/uuid.util';
 
 @Injectable({
   providedIn: 'root'
@@ -12,9 +13,10 @@ import { Usuario } from '../../modelos/usuario';
 export class UsuariosService extends ApiBaseService {
   private readonly endpoint = 'usuarios';
 
+  // Mock usado apenas como fallback quando a API não estiver disponível (somente para testes).
   private usuariosMock: Usuario[] = [
     {
-      id: 1,
+      id: generateUuid(),
       nome: 'Ana Atendimento',
       login: 'ana.atendimento',
       email: 'ana@oficina.local',
@@ -31,7 +33,7 @@ export class UsuariosService extends ApiBaseService {
       tap((usuarios) => {
         this.usuariosMock = [...usuarios];
       }),
-      catchError(() => of([...this.usuariosMock]))
+      catchError((err) => throwError(() => err))
     );
   }
 }

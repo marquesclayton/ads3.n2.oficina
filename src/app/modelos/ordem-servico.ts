@@ -13,11 +13,11 @@ export interface PecaAplicada {
 }
 
 export interface OrdemServico {
-  id: number;
-  clienteId: number;
-  veiculoId: number;
-  usuarioResponsavelId: number;
-  mecanicoResponsavelId: number;
+  id: string;
+  clienteId: string;
+  veiculoId: string;
+  usuarioResponsavelId: string;
+  mecanicoResponsavelId: string;
   dataAbertura: string;
   status: StatusOrdemServico;
   descricaoProblema: string;

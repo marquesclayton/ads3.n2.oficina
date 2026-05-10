@@ -53,7 +53,7 @@ export class VeiculosComponent implements OnInit {
     });
   }
 
-  nomeCliente(clienteId: number): string {
+  nomeCliente(clienteId: string): string {
     return this.clientes.find((cliente) => cliente.id === clienteId)?.nome ?? 'Não informado';
   }
 
@@ -108,7 +108,7 @@ export class VeiculosComponent implements OnInit {
 
   private criarVeiculoVazio(): Omit<Veiculo, 'id'> {
     return {
-      clienteId: 0,
+      clienteId: '',
       placa: '',
       modelo: '',
       marca: '',

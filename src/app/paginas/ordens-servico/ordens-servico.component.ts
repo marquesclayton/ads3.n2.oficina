@@ -30,10 +30,10 @@ export class OrdensServicoComponent implements OnInit {
   errosFormulario: string[] = [];
 
   novaOrdem: Omit<OrdemServico, 'id'> = {
-    clienteId: 0,
-    veiculoId: 0,
-    usuarioResponsavelId: 0,
-    mecanicoResponsavelId: 0,
+    clienteId: '',
+    veiculoId: '',
+    usuarioResponsavelId: '',
+    mecanicoResponsavelId: '',
     dataAbertura: new Date().toISOString().slice(0, 10),
     status: 'aberta',
     descricaoProblema: '',
@@ -132,10 +132,10 @@ export class OrdensServicoComponent implements OnInit {
         next: () => {
           this.mensagemService.sucesso('Ordem de serviço cadastrada com sucesso.');
           form.resetForm({
-            clienteId: 0,
-            veiculoId: 0,
-            usuarioResponsavelId: 0,
-            mecanicoResponsavelId: 0,
+            clienteId: '',
+            veiculoId: '',
+            usuarioResponsavelId: '',
+            mecanicoResponsavelId: '',
             dataAbertura: new Date().toISOString().slice(0, 10),
             descricaoProblema: ''
           });
@@ -149,15 +149,15 @@ export class OrdensServicoComponent implements OnInit {
       });
   }
 
-  nomeCliente(clienteId: number): string {
+  nomeCliente(clienteId: string): string {
     return this.clientes.find((cliente) => cliente.id === clienteId)?.nome ?? 'Não informado';
   }
 
-  nomeMecanico(mecanicoId: number): string {
+  nomeMecanico(mecanicoId: string): string {
     return this.mecanicos.find((mecanico) => mecanico.id === mecanicoId)?.nome ?? 'Não informado';
   }
 
-  dadosVeiculo(veiculoId: number): string {
+  dadosVeiculo(veiculoId: string): string {
     const veiculo = this.veiculos.find((item) => item.id === veiculoId);
     return veiculo ? `${veiculo.placa} - ${veiculo.modelo}` : 'Não informado';
   }

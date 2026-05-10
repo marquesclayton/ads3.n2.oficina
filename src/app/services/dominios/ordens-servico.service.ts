@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { ApiBaseService } from '../../core/http/api-base.service';
 import { OrdemServico } from '../../modelos/ordem-servico';
+import { generateUuid } from '../../core/utils/uuid.util';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +13,14 @@ import { OrdemServico } from '../../modelos/ordem-servico';
 export class OrdensServicoService extends ApiBaseService {
   private readonly endpoint = 'ordens-servico';
 
+  // Mock usado apenas como fallback quando a API não estiver disponível (somente para testes).
   private ordensMock: OrdemServico[] = [
     {
-      id: 1,
-      clienteId: 1,
-      veiculoId: 1,
-      usuarioResponsavelId: 1,
-      mecanicoResponsavelId: 1,
+      id: generateUuid(),
+      clienteId: generateUuid(),
+      veiculoId: generateUuid(),
+      usuarioResponsavelId: generateUuid(),
+      mecanicoResponsavelId: generateUuid(),
       dataAbertura: '2026-05-10',
       status: 'aberta',
       descricaoProblema: 'Ruído ao frear em baixa velocidade.',
@@ -39,8 +41,6 @@ export class OrdensServicoService extends ApiBaseService {
     }
   ];
 
-  private proximoId = 2;
-
   constructor(http: HttpClient) {
     super(http);
   }
@@ -49,9 +49,8 @@ export class OrdensServicoService extends ApiBaseService {
     return this.get<OrdemServico[]>(this.endpoint).pipe(
       tap((ordens) => {
         this.ordensMock = [...ordens];
-        this.proximoId = this.calcularProximoId(ordens);
       }),
-      catchError(() => of([...this.ordensMock]))
+      catchError((err) => throwError(() => err))
     );
   }
 
@@ -59,17 +58,11 @@ export class OrdensServicoService extends ApiBaseService {
     return this.post<OrdemServico, Omit<OrdemServico, 'id'>>(this.endpoint, ordem).pipe(
       tap((ordemCriada) => {
         this.ordensMock = [...this.ordensMock, ordemCriada];
-        this.proximoId = this.calcularProximoId(this.ordensMock);
+        // this.proximoId = this.calcularProximoId(this.ordensMock);
       }),
-      catchError(() => {
-        const ordemMock: OrdemServico = { id: this.proximoId++, ...ordem };
-        this.ordensMock = [...this.ordensMock, ordemMock];
-        return of(ordemMock);
-      })
+      catchError((err) => throwError(() => err))
     );
   }
 
-  private calcularProximoId(ordens: OrdemServico[]): number {
-    return ordens.length ? Math.max(...ordens.map((ordem) => ordem.id)) + 1 : 1;
-  }
+
 }

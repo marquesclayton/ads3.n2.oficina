@@ -1,10 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
 import { ApiBaseService } from '../../core/http/api-base.service';
 import { Veiculo } from '../../modelos/veiculo';
+import { generateUuid } from '../../core/utils/uuid.util';
 
 @Injectable({
   providedIn: 'root'
@@ -12,10 +13,11 @@ import { Veiculo } from '../../modelos/veiculo';
 export class VeiculosService extends ApiBaseService {
   private readonly endpoint = 'veiculos';
 
+  // Mock usado apenas como fallback quando a API não estiver disponível (somente para testes).
   private veiculosMock: Veiculo[] = [
     {
-      id: 1,
-      clienteId: 1,
+      id: generateUuid(),
+      clienteId: generateUuid(),
       placa: 'ABC-1234',
       modelo: 'Onix',
       marca: 'Chevrolet',
@@ -23,7 +25,6 @@ export class VeiculosService extends ApiBaseService {
     }
   ];
 
-  private proximoId = 2;
 
   constructor(http: HttpClient) {
     super(http);
@@ -33,9 +34,9 @@ export class VeiculosService extends ApiBaseService {
     return this.get<Veiculo[]>(this.endpoint).pipe(
       tap((veiculos) => {
         this.veiculosMock = [...veiculos];
-        this.proximoId = this.calcularProximoId(veiculos);
+        // UUIDs used for ids; no numeric next id calculation needed
       }),
-      catchError(() => of([...this.veiculosMock]))
+      catchError((err) => throwError(() => err))
     );
   }
 
@@ -43,17 +44,9 @@ export class VeiculosService extends ApiBaseService {
     return this.post<Veiculo, Omit<Veiculo, 'id'>>(this.endpoint, veiculo).pipe(
       tap((veiculoCriado) => {
         this.veiculosMock = [...this.veiculosMock, veiculoCriado];
-        this.proximoId = this.calcularProximoId(this.veiculosMock);
       }),
-      catchError(() => {
-        const veiculoMock: Veiculo = { id: this.proximoId++, ...veiculo };
-        this.veiculosMock = [...this.veiculosMock, veiculoMock];
-        return of(veiculoMock);
-      })
+      catchError((err) => throwError(() => err))
     );
   }
 
-  private calcularProximoId(veiculos: Veiculo[]): number {
-    return veiculos.length ? Math.max(...veiculos.map((veiculo) => veiculo.id)) + 1 : 1;
-  }
 }
