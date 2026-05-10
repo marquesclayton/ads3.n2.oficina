@@ -1,4 +1,4 @@
-export type StatusOrdemServico = 'aberta' | 'em_execucao' | 'finalizada';
+export type StatusOrdemServico = 'aberta' | 'em_execucao' | 'finalizada' | 'cancelada';
 
 export interface ServicoExecutado {
   descricao: string;
