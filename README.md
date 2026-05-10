@@ -77,7 +77,7 @@ Em outras palavras, o comportamento desejado e documentado do CarRepair é orien
 ### 4.1 Frontend
 
 - **Angular 23** (migração aplicada com pacotes `22.0.0-next.x`, etapa imediatamente anterior de release)
-- **TypeScript 5.9.x**
+- **TypeScript 6.0.x**
 - **HTML5**
 - **CSS3**
 - **RxJS 7.8.x**
