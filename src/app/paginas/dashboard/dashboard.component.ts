@@ -5,6 +5,7 @@ import { ClientesService } from '../../services/dominios/clientes.service';
 import { MecanicosService } from '../../services/dominios/mecanicos.service';
 import { OrdensServicoService } from '../../services/dominios/ordens-servico.service';
 import { VeiculosService } from '../../services/dominios/veiculos.service';
+import { MensagemService } from '../../shared/mensagens/mensagem.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,7 +22,8 @@ export class DashboardComponent implements OnInit {
     private readonly clientesService: ClientesService,
     private readonly veiculosService: VeiculosService,
     private readonly mecanicosService: MecanicosService,
-    private readonly ordensServicoService: OrdensServicoService
+    private readonly ordensServicoService: OrdensServicoService,
+    private readonly mensagemService: MensagemService
   ) {}
 
   ngOnInit(): void {
@@ -30,11 +32,16 @@ export class DashboardComponent implements OnInit {
       veiculos: this.veiculosService.listar(),
       mecanicos: this.mecanicosService.listar(),
       ordens: this.ordensServicoService.listar()
-    }).subscribe(({ clientes, veiculos, mecanicos, ordens }) => {
-      this.totalClientes = clientes.length;
-      this.totalVeiculos = veiculos.length;
-      this.totalMecanicos = mecanicos.length;
-      this.totalOrdensServico = ordens.length;
+    }).subscribe({
+      next: ({ clientes, veiculos, mecanicos, ordens }) => {
+        this.totalClientes = clientes.length;
+        this.totalVeiculos = veiculos.length;
+        this.totalMecanicos = mecanicos.length;
+        this.totalOrdensServico = ordens.length;
+      },
+      error: () => {
+        this.mensagemService.erro('Não foi possível carregar os indicadores do dashboard.');
+      }
     });
   }
 }

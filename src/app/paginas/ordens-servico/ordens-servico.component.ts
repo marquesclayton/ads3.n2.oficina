@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { Cliente } from '../../modelos/cliente';
 import { Mecanico } from '../../modelos/mecanico';
@@ -65,20 +66,21 @@ export class OrdensServicoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.clientesService.listar().subscribe((clientes) => {
-      this.clientes = clientes;
-    });
-
-    this.usuariosService.listar().subscribe((usuarios) => {
-      this.usuarios = usuarios;
-    });
-
-    this.veiculosService.listar().subscribe((veiculos) => {
-      this.veiculos = veiculos;
-    });
-
-    this.mecanicosService.listar().subscribe((mecanicos) => {
-      this.mecanicos = mecanicos;
+    forkJoin({
+      clientes: this.clientesService.listar(),
+      usuarios: this.usuariosService.listar(),
+      veiculos: this.veiculosService.listar(),
+      mecanicos: this.mecanicosService.listar()
+    }).subscribe({
+      next: ({ clientes, usuarios, veiculos, mecanicos }) => {
+        this.clientes = clientes;
+        this.usuarios = usuarios;
+        this.veiculos = veiculos;
+        this.mecanicos = mecanicos;
+      },
+      error: () => {
+        this.mensagemService.erro('Falha ao carregar dados de apoio para ordens de serviço.');
+      }
     });
 
     this.carregarOrdens();

@@ -20,13 +20,7 @@ export class VeiculosComponent implements OnInit {
   veiculos: Veiculo[] = [];
   errosFormulario: string[] = [];
 
-  novoVeiculo: Omit<Veiculo, 'id'> = {
-    clienteId: 0,
-    placa: '',
-    modelo: '',
-    marca: '',
-    ano: new Date().getFullYear()
-  };
+  novoVeiculo: Omit<Veiculo, 'id'> = this.criarVeiculoVazio();
 
   constructor(
     private readonly clientesService: ClientesService,
@@ -50,13 +44,7 @@ export class VeiculosComponent implements OnInit {
     this.veiculosService.adicionar(this.novoVeiculo).subscribe({
       next: () => {
         this.mensagemService.sucesso('Veículo salvo com sucesso.');
-        form.resetForm({
-          clienteId: 0,
-          placa: '',
-          modelo: '',
-          marca: '',
-          ano: new Date().getFullYear()
-        });
+        form.resetForm(this.criarVeiculoVazio());
         this.carregarVeiculos();
       },
       error: () => {
@@ -111,10 +99,20 @@ export class VeiculosComponent implements OnInit {
       erros.push('Informe a marca do veículo.');
     }
 
-    if (this.novoVeiculo.ano < 1950 || this.novoVeiculo.ano > anoAtual + 1) {
-      erros.push(`Informe um ano entre 1950 e ${anoAtual + 1}.`);
+    if (this.novoVeiculo.ano < 1950 || this.novoVeiculo.ano > anoAtual) {
+      erros.push(`Informe um ano entre 1950 e ${anoAtual}.`);
     }
 
     return erros;
+  }
+
+  private criarVeiculoVazio(): Omit<Veiculo, 'id'> {
+    return {
+      clienteId: 0,
+      placa: '',
+      modelo: '',
+      marca: '',
+      ano: new Date().getFullYear()
+    };
   }
 }

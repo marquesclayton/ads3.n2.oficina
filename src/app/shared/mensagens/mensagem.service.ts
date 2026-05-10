@@ -13,6 +13,7 @@ export interface MensagemApp {
   providedIn: 'root'
 })
 export class MensagemService {
+  private static readonly TEMPO_EXIBICAO_PADRAO_MS = 5000;
   private readonly mensagensSubject = new BehaviorSubject<MensagemApp[]>([]);
   readonly mensagens$ = this.mensagensSubject.asObservable();
 
@@ -42,6 +43,6 @@ export class MensagemService {
     const id = this.sequencia++;
     this.mensagensSubject.next([...this.mensagensSubject.value, { id, tipo, texto }]);
 
-    setTimeout(() => this.remover(id), 5000);
+    setTimeout(() => this.remover(id), MensagemService.TEMPO_EXIBICAO_PADRAO_MS);
   }
 }

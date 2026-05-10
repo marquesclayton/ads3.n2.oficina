@@ -2,6 +2,10 @@ export function somenteDigitos(valor: string): string {
   return valor.replace(/\D/g, '');
 }
 
+/**
+ * Validação simplificada: verifica apenas formato com 11 dígitos.
+ * Não aplica cálculo dos dígitos verificadores do CPF.
+ */
 export function validarCpfBasico(cpf: string): boolean {
   return /^\d{11}$/.test(somenteDigitos(cpf));
 }
