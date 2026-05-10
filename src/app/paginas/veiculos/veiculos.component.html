@@ -1,0 +1,62 @@
+<section class="pagina">
+  <h1>Veículos</h1>
+
+  <form #formVeiculo="ngForm" class="formulario" (ngSubmit)="salvarVeiculo(formVeiculo)">
+    <label>
+      Cliente
+      <select name="clienteId" [(ngModel)]="novoVeiculo.clienteId" required>
+        <option [ngValue]="0">Selecione</option>
+        <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+          {{ cliente.nome }}
+        </option>
+      </select>
+    </label>
+
+    <label>
+      Placa
+      <input name="placa" [(ngModel)]="novoVeiculo.placa" required placeholder="ABC-1234" />
+    </label>
+
+    <label>
+      Modelo
+      <input name="modelo" [(ngModel)]="novoVeiculo.modelo" required />
+    </label>
+
+    <label>
+      Marca
+      <input name="marca" [(ngModel)]="novoVeiculo.marca" required />
+    </label>
+
+    <label>
+      Ano
+      <input name="ano" type="number" [(ngModel)]="novoVeiculo.ano" required />
+    </label>
+
+    <ul class="erros" *ngIf="errosFormulario.length">
+      <li *ngFor="let erro of errosFormulario">{{ erro }}</li>
+    </ul>
+
+    <button type="submit">Adicionar veículo</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Placa</th>
+        <th>Modelo</th>
+        <th>Marca</th>
+        <th>Ano</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let veiculo of veiculos">
+        <td>{{ nomeCliente(veiculo.clienteId) }}</td>
+        <td>{{ veiculo.placa }}</td>
+        <td>{{ veiculo.modelo }}</td>
+        <td>{{ veiculo.marca }}</td>
+        <td>{{ veiculo.ano }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

@@ -1,78 +1,47 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { forkJoin } from 'rxjs';
 
-import { DadosOficinaService } from '../../services/dados-oficina.service';
+import { ClientesService } from '../../services/dominios/clientes.service';
+import { MecanicosService } from '../../services/dominios/mecanicos.service';
+import { OrdensServicoService } from '../../services/dominios/ordens-servico.service';
+import { VeiculosService } from '../../services/dominios/veiculos.service';
+import { MensagemService } from '../../shared/mensagens/mensagem.service';
 
 @Component({
   selector: 'app-dashboard',
-  template: `
-    <section class="pagina">
-      <h1>Dashboard da Oficina</h1>
-      <p>Aplicação acadêmica para gestão dos principais fluxos da oficina mecânica.</p>
-
-      <div class="grid">
-        <article class="card">
-          <h2>Clientes</h2>
-          <strong>{{ totalClientes }}</strong>
-        </article>
-        <article class="card">
-          <h2>Veículos</h2>
-          <strong>{{ totalVeiculos }}</strong>
-        </article>
-        <article class="card">
-          <h2>Mecânicos</h2>
-          <strong>{{ totalMecanicos }}</strong>
-        </article>
-        <article class="card">
-          <h2>Ordens de Serviço</h2>
-          <strong>{{ totalOrdensServico }}</strong>
-        </article>
-      </div>
-    </section>
-  `,
-  styles: [
-    `
-      .grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      }
-
-      .card {
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        background: #fff;
-      }
-
-      .card h2 {
-        margin: 0;
-        font-size: 1rem;
-      }
-
-      .card strong {
-        display: block;
-        margin-top: 0.5rem;
-        font-size: 1.8rem;
-      }
-    `
-  ]
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent {
-  constructor(private readonly dadosOficinaService: DadosOficinaService) {}
+export class DashboardComponent implements OnInit {
+  totalClientes = 0;
+  totalVeiculos = 0;
+  totalMecanicos = 0;
+  totalOrdensServico = 0;
 
-  get totalClientes(): number {
-    return this.dadosOficinaService.listarClientes().length;
-  }
+  constructor(
+    private readonly clientesService: ClientesService,
+    private readonly veiculosService: VeiculosService,
+    private readonly mecanicosService: MecanicosService,
+    private readonly ordensServicoService: OrdensServicoService,
+    private readonly mensagemService: MensagemService
+  ) {}
 
-  get totalVeiculos(): number {
-    return this.dadosOficinaService.listarVeiculos().length;
-  }
-
-  get totalMecanicos(): number {
-    return this.dadosOficinaService.listarMecanicos().length;
-  }
-
-  get totalOrdensServico(): number {
-    return this.dadosOficinaService.listarOrdensServico().length;
+  ngOnInit(): void {
+    forkJoin({
+      clientes: this.clientesService.listar(),
+      veiculos: this.veiculosService.listar(),
+      mecanicos: this.mecanicosService.listar(),
+      ordens: this.ordensServicoService.listar()
+    }).subscribe({
+      next: ({ clientes, veiculos, mecanicos, ordens }) => {
+        this.totalClientes = clientes.length;
+        this.totalVeiculos = veiculos.length;
+        this.totalMecanicos = mecanicos.length;
+        this.totalOrdensServico = ordens.length;
+      },
+      error: () => {
+        this.mensagemService.erro('Não foi possível carregar os indicadores do dashboard.');
+      }
+    });
   }
 }

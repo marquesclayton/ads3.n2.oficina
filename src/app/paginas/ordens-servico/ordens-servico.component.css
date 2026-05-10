@@ -1,0 +1,20 @@
+.linha-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem;
+  align-items: end;
+}
+
+.lista-os {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.erros {
+  margin: 0;
+  padding-left: 1rem;
+  color: #991b1b;
+}

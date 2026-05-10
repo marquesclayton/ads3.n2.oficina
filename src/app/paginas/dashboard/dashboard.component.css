@@ -1,0 +1,23 @@
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.card {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.card strong {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 1.8rem;
+}
