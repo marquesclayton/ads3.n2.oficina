@@ -1,78 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
 
+import { validarPlacaBasica } from '../../core/validacoes/campos.util';
 import { Cliente } from '../../modelos/cliente';
 import { Veiculo } from '../../modelos/veiculo';
-import { DadosOficinaService } from '../../services/dados-oficina.service';
+import { ClientesService } from '../../services/dominios/clientes.service';
+import { VeiculosService } from '../../services/dominios/veiculos.service';
+import { MensagemService } from '../../shared/mensagens/mensagem.service';
 
 @Component({
   selector: 'app-veiculos',
   imports: [CommonModule, FormsModule],
-  template: `
-    <section class="pagina">
-      <h1>Veículos</h1>
-
-      <form class="formulario" (ngSubmit)="salvarVeiculo()">
-        <label>
-          Cliente
-          <select name="clienteId" [(ngModel)]="novoVeiculo.clienteId" required>
-            <option [ngValue]="0">Selecione</option>
-            <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
-              {{ cliente.nome }}
-            </option>
-          </select>
-        </label>
-
-        <label>
-          Placa
-          <input name="placa" [(ngModel)]="novoVeiculo.placa" required />
-        </label>
-
-        <label>
-          Modelo
-          <input name="modelo" [(ngModel)]="novoVeiculo.modelo" required />
-        </label>
-
-        <label>
-          Marca
-          <input name="marca" [(ngModel)]="novoVeiculo.marca" required />
-        </label>
-
-        <label>
-          Ano
-          <input name="ano" type="number" [(ngModel)]="novoVeiculo.ano" required />
-        </label>
-
-        <button type="submit">Adicionar veículo</button>
-      </form>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Cliente</th>
-            <th>Placa</th>
-            <th>Modelo</th>
-            <th>Marca</th>
-            <th>Ano</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let veiculo of veiculos">
-            <td>{{ nomeCliente(veiculo.clienteId) }}</td>
-            <td>{{ veiculo.placa }}</td>
-            <td>{{ veiculo.modelo }}</td>
-            <td>{{ veiculo.marca }}</td>
-            <td>{{ veiculo.ano }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-  `
+  templateUrl: './veiculos.component.html',
+  styleUrl: './veiculos.component.css'
 })
-export class VeiculosComponent {
+export class VeiculosComponent implements OnInit {
   clientes: Cliente[] = [];
   veiculos: Veiculo[] = [];
+  errosFormulario: string[] = [];
 
   novoVeiculo: Omit<Veiculo, 'id'> = {
     clienteId: 0,
@@ -82,32 +28,93 @@ export class VeiculosComponent {
     ano: new Date().getFullYear()
   };
 
-  constructor(private readonly dadosOficinaService: DadosOficinaService) {
-    this.clientes = this.dadosOficinaService.listarClientes();
+  constructor(
+    private readonly clientesService: ClientesService,
+    private readonly veiculosService: VeiculosService,
+    private readonly mensagemService: MensagemService
+  ) {}
+
+  ngOnInit(): void {
+    this.carregarClientes();
     this.carregarVeiculos();
   }
 
-  salvarVeiculo(): void {
-    if (!this.novoVeiculo.clienteId) {
+  salvarVeiculo(form: NgForm): void {
+    this.errosFormulario = this.validarFormulario();
+
+    if (form.invalid || this.errosFormulario.length) {
+      this.mensagemService.aviso('Revise os campos obrigatórios antes de salvar o veículo.');
       return;
     }
 
-    this.dadosOficinaService.adicionarVeiculo(this.novoVeiculo);
-    this.novoVeiculo = {
-      clienteId: 0,
-      placa: '',
-      modelo: '',
-      marca: '',
-      ano: new Date().getFullYear()
-    };
-    this.carregarVeiculos();
+    this.veiculosService.adicionar(this.novoVeiculo).subscribe({
+      next: () => {
+        this.mensagemService.sucesso('Veículo salvo com sucesso.');
+        form.resetForm({
+          clienteId: 0,
+          placa: '',
+          modelo: '',
+          marca: '',
+          ano: new Date().getFullYear()
+        });
+        this.carregarVeiculos();
+      },
+      error: () => {
+        this.mensagemService.erro('Não foi possível salvar o veículo no momento.');
+      }
+    });
   }
 
   nomeCliente(clienteId: number): string {
     return this.clientes.find((cliente) => cliente.id === clienteId)?.nome ?? 'Não informado';
   }
 
+  private carregarClientes(): void {
+    this.clientesService.listar().subscribe({
+      next: (clientes) => {
+        this.clientes = clientes;
+      },
+      error: () => {
+        this.mensagemService.erro('Falha ao carregar clientes para o cadastro de veículo.');
+      }
+    });
+  }
+
   private carregarVeiculos(): void {
-    this.veiculos = this.dadosOficinaService.listarVeiculos();
+    this.veiculosService.listar().subscribe({
+      next: (veiculos) => {
+        this.veiculos = veiculos;
+      },
+      error: () => {
+        this.mensagemService.erro('Falha ao carregar veículos.');
+      }
+    });
+  }
+
+  private validarFormulario(): string[] {
+    const erros: string[] = [];
+    const anoAtual = new Date().getFullYear();
+
+    if (!this.novoVeiculo.clienteId) {
+      erros.push('Selecione um cliente.');
+    }
+
+    if (!validarPlacaBasica(this.novoVeiculo.placa)) {
+      erros.push('Informe uma placa válida (ex.: ABC-1234 ou ABC1D23).');
+    }
+
+    if (!this.novoVeiculo.modelo.trim()) {
+      erros.push('Informe o modelo do veículo.');
+    }
+
+    if (!this.novoVeiculo.marca.trim()) {
+      erros.push('Informe a marca do veículo.');
+    }
+
+    if (this.novoVeiculo.ano < 1950 || this.novoVeiculo.ano > anoAtual + 1) {
+      erros.push(`Informe um ano entre 1950 e ${anoAtual + 1}.`);
+    }
+
+    return erros;
   }
 }

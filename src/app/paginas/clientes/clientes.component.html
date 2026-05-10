@@ -1,0 +1,43 @@
+<section class="pagina">
+  <h1>Clientes</h1>
+
+  <form #formCliente="ngForm" class="formulario" (ngSubmit)="salvarCliente(formCliente)">
+    <label>
+      Nome
+      <input name="nome" [(ngModel)]="novoCliente.nome" required minlength="3" />
+    </label>
+
+    <label>
+      CPF
+      <input name="cpf" [(ngModel)]="novoCliente.cpf" required placeholder="Somente números" />
+    </label>
+
+    <label>
+      Telefone
+      <input name="telefone" [(ngModel)]="novoCliente.telefone" required placeholder="(00) 00000-0000" />
+    </label>
+
+    <ul class="erros" *ngIf="errosFormulario.length">
+      <li *ngFor="let erro of errosFormulario">{{ erro }}</li>
+    </ul>
+
+    <button type="submit">Adicionar cliente</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>CPF</th>
+        <th>Telefone</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let cliente of clientes">
+        <td>{{ cliente.nome }}</td>
+        <td>{{ cliente.cpf }}</td>
+        <td>{{ cliente.telefone }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

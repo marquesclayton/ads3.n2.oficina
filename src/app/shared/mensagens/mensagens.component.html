@@ -1,0 +1,6 @@
+<section class="mensagens" *ngIf="mensagens$ | async as mensagens">
+  <article class="mensagem" *ngFor="let mensagem of mensagens" [ngClass]="mensagem.tipo">
+    <span>{{ mensagem.texto }}</span>
+    <button type="button" (click)="fecharMensagem(mensagem.id)">×</button>
+  </article>
+</section>

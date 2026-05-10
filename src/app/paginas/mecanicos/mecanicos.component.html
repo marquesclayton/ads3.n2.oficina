@@ -1,0 +1,43 @@
+<section class="pagina">
+  <h1>Mecânicos</h1>
+
+  <form #formMecanico="ngForm" class="formulario" (ngSubmit)="salvarMecanico(formMecanico)">
+    <label>
+      Nome
+      <input name="nome" [(ngModel)]="novoMecanico.nome" required minlength="3" />
+    </label>
+
+    <label>
+      Especialidade
+      <input name="especialidade" [(ngModel)]="novoMecanico.especialidade" required />
+    </label>
+
+    <label>
+      Telefone
+      <input name="telefone" [(ngModel)]="novoMecanico.telefone" required placeholder="(00) 00000-0000" />
+    </label>
+
+    <ul class="erros" *ngIf="errosFormulario.length">
+      <li *ngFor="let erro of errosFormulario">{{ erro }}</li>
+    </ul>
+
+    <button type="submit">Adicionar mecânico</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Especialidade</th>
+        <th>Telefone</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let mecanico of mecanicos">
+        <td>{{ mecanico.nome }}</td>
+        <td>{{ mecanico.especialidade }}</td>
+        <td>{{ mecanico.telefone }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

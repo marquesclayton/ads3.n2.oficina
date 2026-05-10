@@ -1,57 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
 
+import { validarCpfBasico, validarTelefoneBasico } from '../../core/validacoes/campos.util';
 import { Cliente } from '../../modelos/cliente';
-import { DadosOficinaService } from '../../services/dados-oficina.service';
+import { ClientesService } from '../../services/dominios/clientes.service';
+import { MensagemService } from '../../shared/mensagens/mensagem.service';
 
 @Component({
   selector: 'app-clientes',
   imports: [CommonModule, FormsModule],
-  template: `
-    <section class="pagina">
-      <h1>Clientes</h1>
-
-      <form class="formulario" (ngSubmit)="salvarCliente()">
-        <label>
-          Nome
-          <input name="nome" [(ngModel)]="novoCliente.nome" required />
-        </label>
-
-        <label>
-          CPF
-          <input name="cpf" [(ngModel)]="novoCliente.cpf" required />
-        </label>
-
-        <label>
-          Telefone
-          <input name="telefone" [(ngModel)]="novoCliente.telefone" required />
-        </label>
-
-        <button type="submit">Adicionar cliente</button>
-      </form>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>CPF</th>
-            <th>Telefone</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let cliente of clientes">
-            <td>{{ cliente.nome }}</td>
-            <td>{{ cliente.cpf }}</td>
-            <td>{{ cliente.telefone }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-  `
+  templateUrl: './clientes.component.html',
+  styleUrl: './clientes.component.css'
 })
-export class ClientesComponent {
+export class ClientesComponent implements OnInit {
   clientes: Cliente[] = [];
+  errosFormulario: string[] = [];
 
   novoCliente: Omit<Cliente, 'id'> = {
     nome: '',
@@ -59,21 +23,61 @@ export class ClientesComponent {
     telefone: ''
   };
 
-  constructor(private readonly dadosOficinaService: DadosOficinaService) {
+  constructor(
+    private readonly clientesService: ClientesService,
+    private readonly mensagemService: MensagemService
+  ) {}
+
+  ngOnInit(): void {
     this.carregarClientes();
   }
 
-  salvarCliente(): void {
-    this.dadosOficinaService.adicionarCliente(this.novoCliente);
-    this.novoCliente = {
-      nome: '',
-      cpf: '',
-      telefone: ''
-    };
-    this.carregarClientes();
+  salvarCliente(form: NgForm): void {
+    this.errosFormulario = this.validarFormulario();
+
+    if (form.invalid || this.errosFormulario.length) {
+      this.mensagemService.aviso('Revise os campos obrigatórios antes de salvar o cliente.');
+      return;
+    }
+
+    this.clientesService.adicionar(this.novoCliente).subscribe({
+      next: () => {
+        this.mensagemService.sucesso('Cliente salvo com sucesso.');
+        form.resetForm({ nome: '', cpf: '', telefone: '' });
+        this.carregarClientes();
+      },
+      error: () => {
+        this.mensagemService.erro('Não foi possível salvar o cliente no momento.');
+      }
+    });
   }
 
   private carregarClientes(): void {
-    this.clientes = this.dadosOficinaService.listarClientes();
+    this.clientesService.listar().subscribe({
+      next: (clientes) => {
+        this.clientes = clientes;
+      },
+      error: () => {
+        this.mensagemService.erro('Falha ao carregar clientes.');
+      }
+    });
+  }
+
+  private validarFormulario(): string[] {
+    const erros: string[] = [];
+
+    if (!this.novoCliente.nome.trim()) {
+      erros.push('Informe o nome do cliente.');
+    }
+
+    if (!validarCpfBasico(this.novoCliente.cpf)) {
+      erros.push('Informe um CPF válido com 11 dígitos.');
+    }
+
+    if (!validarTelefoneBasico(this.novoCliente.telefone)) {
+      erros.push('Informe um telefone válido com DDD.');
+    }
+
+    return erros;
   }
 }
