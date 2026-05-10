@@ -1,6 +1,6 @@
 # 🚗 CarRepair
 
-Sistema acadêmico para **gestão de oficina mecânica**, desenvolvido com **Angular 21**, **TypeScript** e modelagem relacional em **PostgreSQL**, com foco em organização didática, separação por domínios e preparação para apresentação técnica em sala de aula.
+Sistema acadêmico para **gestão de oficina mecânica**, desenvolvido com **Angular 23** (linha de migração no canal `next`), **TypeScript** e modelagem relacional em **PostgreSQL**, com foco em organização didática, separação por domínios e preparação para apresentação técnica em sala de aula.
 
 > **Objetivo desta documentação**: refletir o estado atual do projeto, padronizar a nomenclatura para **CarRepair**, remover a ideia de _mock como fallback operacional_ e consolidar uma visão clara da arquitetura, domínio, banco de dados, fluxos, extensibilidade e operação do sistema.
 
@@ -76,7 +76,7 @@ Em outras palavras, o comportamento desejado e documentado do CarRepair é orien
 
 ### 4.1 Frontend
 
-- **Angular 21.2.x**
+- **Angular 23** (migração aplicada com pacotes `22.0.0-next.x`, etapa imediatamente anterior de release)
 - **TypeScript 5.9.x**
 - **HTML5**
 - **CSS3**
@@ -84,7 +84,7 @@ Em outras palavras, o comportamento desejado e documentado do CarRepair é orien
 
 ### 4.2 Build, testes e ferramentas
 
-- **Angular CLI 21.2.x**
+- **Angular CLI 23** (migração aplicada com pacotes `22.0.0-next.x`, etapa imediatamente anterior de release)
 - **@angular/build**
 - **Vitest**
 - **JSDOM**
