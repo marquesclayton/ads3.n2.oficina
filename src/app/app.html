@@ -1,0 +1,18 @@
+<header class="topo">
+  <div>
+    <h1>{{ titulo }}</h1>
+    <p>Gestão acadêmica de oficina mecânica</p>
+  </div>
+
+  <nav>
+    <a routerLink="/dashboard" routerLinkActive="ativo">Dashboard</a>
+    <a routerLink="/clientes" routerLinkActive="ativo">Clientes</a>
+    <a routerLink="/veiculos" routerLinkActive="ativo">Veículos</a>
+    <a routerLink="/mecanicos" routerLinkActive="ativo">Mecânicos</a>
+    <a routerLink="/ordens-servico" routerLinkActive="ativo">Ordens de Serviço</a>
+  </nav>
+</header>
+
+<main>
+  <router-outlet />
+</main>

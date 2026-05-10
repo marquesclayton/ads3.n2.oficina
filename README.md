@@ -1,300 +1,157 @@
-# 🛠️ Sistema de Gestão para Oficinas Mecânicas (AutoManager)
-### 🎓 Projeto Didático - Faculdade de Tecnologia Senai Fatesg
+# 🛠️ Oficina Acadêmica - ADS3
 
-![PostgreSQL](https://shields.io)
-![Security](https://shields.io)
-![Academic](https://shields.io)
+Aplicação acadêmica para gestão de oficina mecânica, com foco em **Cliente**, **Usuário**, **Veículo**, **Mecânico** e **Ordem de Serviço**.
 
-## 📌 Sobre o Projeto
-O **AutoManager** é um ecossistema de banco de dados desenvolvido para a turma de **Análise e Desenvolvimento de Sistemas (ADS3)** da **Fatesg Senai GO**. O projeto foca em padrões profissionais de modelagem, segurança e auditoria de dados.
+> **Escopo desta entrega:** orçamento, catálogo de peças e pagamentos **não são o eixo principal** da solução. Ainda assim, a Ordem de Serviço permite registrar **peças aplicadas** no atendimento.
 
-### 🎯 Objetivos Acadêmicos
-- **Segurança:** Autenticação robusta com **Hash** e **Salt** (via `pgcrypto`).
-- **Rastreabilidade (Auditoria):** Controle rigoroso de quem criou ou alterou cada registro no sistema.
-- **Modelagem Avançada:** Uso de UUIDs, tipos enumerados (ENUM) e colunas geradas.
-- **Performance:** Estratégias de indexação para buscas otimizadas.
+## 1) Visão geral
 
----
+Este repositório contém:
+- **Frontend Angular** com estrutura inicial de CRUD acadêmico
+- **DDL PostgreSQL** em `database/ddl.sql`
+- Documentação alinhada ao escopo solicitado
 
-## 🔐 Segurança e Autenticação
-O sistema utiliza criptografia de ponta no banco de dados para proteção de credenciais. As senhas são processadas com o algoritmo **Bcrypt**, garantindo que nem mesmo o administrador do banco tenha acesso às senhas em texto claro.
+A Ordem de Serviço (OS) contempla:
+- serviços executados
+- valor de cada serviço
+- tempo de execução de cada serviço
+- peças aplicadas
 
----
+## 2) Requisitos funcionais (RF)
 
-## 📑 Auditoria de Dados (Traceability)
-Para garantir a conformidade e a segurança operacional, as tabelas principais contêm colunas de auditoria:
-- `created_at` / `updated_at`: Registram automaticamente o momento da operação.
-- `created_by`: Referencia o **Usuário** responsável pela criação do registro.
-- `updated_by`: Referencia o **Usuário** que realizou a última modificação.
+- **RF01 - Usuários:** manter usuários para controle de operação e responsável pela OS.
+- **RF02 - Clientes:** cadastrar e listar clientes.
+- **RF03 - Veículos:** cadastrar veículos vinculados a clientes.
+- **RF04 - Mecânicos:** cadastrar e listar mecânicos.
+- **RF05 - Ordem de Serviço:** abrir e listar OS, vinculando cliente, veículo, usuário e mecânico.
+- **RF06 - Itens de serviço da OS:** registrar descrição, valor e tempo de execução de cada serviço.
+- **RF07 - Peças aplicadas na OS:** registrar descrição, quantidade e valor unitário das peças aplicadas.
 
----
+## 3) Requisitos não funcionais (RNF)
 
-## 📑 Requisitos do Sistema
+- **RNF01:** modelagem didática e coerente com foco acadêmico.
+- **RNF02:** banco de dados PostgreSQL com relacionamentos essenciais do domínio.
+- **RNF03:** frontend com navegação simples, rotas claras e componentes standalone.
+- **RNF04:** consistência entre documentação, DDL e estrutura do frontend.
 
-### Requisitos Funcionais (RF)
-- **RF01 (Autenticação):** O sistema deve autenticar usuários utilizando hashes criptográficos.
-- **RF02 (Clientes):** Cadastro completo de clientes com múltiplos meios de contato e endereços.
-- **RF03 (Veículos):** Gerenciamento de frotas por cliente com identificação única por placa.
-- **RF04 (Ordens de Serviço):** Abertura e controle de status de manutenção (Aberta, Em Serviço, etc).
-- **RF05 (Orçamentos):** Composição de custos separando mão de obra de peças.
-- **RF06 (Estoque):** Baixa automática em itens de catálogo e histórico de movimentações.
+## 4) Escopo fora do foco principal
 
-### Requisitos Não Funcionais (RNF)
-- **RNF01:** Persistência em PostgreSQL 13+.
-- **RNF02:** Identificadores universais (UUID) para evitar previsibilidade de IDs.
-- **RNF03:** Registro de data/hora de criação e atualização em todas as entidades.
+A estrutura de dados pode evoluir futuramente para orçamento e catálogo de peças, porém nesta entrega:
+- orçamento e catálogo **não são necessários para operar os fluxos principais**;
+- peças continuam sendo registradas diretamente na Ordem de Serviço como itens aplicados.
 
----
+## 5) Modelagem de domínio
 
-## 🏗️ Modelagem Técnica
+### 5.1 DER (escopo principal)
 
-### 1. Modelo Entidade-Relacionamento (DER)
 ```mermaid
 erDiagram
-    USUARIOS ||--o{ CLIENTES : "cadastra"
-    USUARIOS ||--o{ ORDEM_SERVICO : "atende"
-    CLIENTES ||--o{ VEICULOS : "possui"
-    VEICULOS ||--o{ ORDEM_SERVICO : "objeto_servico"
-    ORDEM_SERVICO ||--o{ ORCAMENTOS : "possui"
-    ORCAMENTOS ||--o{ ITENS_ORCAMENTO_PECA : "contém"
-    CATALOGO_PECAS ||--o{ ITENS_ORCAMENTO_PECA : "referencia"
-    ORDEM_SERVICO ||--o{ PAGAMENTOS : "gera"
+    CLIENTES ||--o{ VEICULOS : possui
+    CLIENTES ||--o{ ORDENS_SERVICO : abre
+    USUARIOS ||--o{ ORDENS_SERVICO : registra
+    MECANICOS ||--o{ ORDENS_SERVICO : executa
+    VEICULOS ||--o{ ORDENS_SERVICO : recebe
+    ORDENS_SERVICO ||--o{ ORDEM_SERVICO_SERVICOS : contem
+    ORDENS_SERVICO ||--o{ ORDEM_SERVICO_PECAS_APLICADAS : aplica
+```
 
-    USUARIOS {
-        uuid id PK
-        string username
-        string password_hash
-        string salt
-    }
-````
-```mermaid
-classDiagram
-    class Usuario {
-        +UUID id
-        +String username
-        -String password_hash
-        -String salt
-        +autenticar(String senha) bool
-    }
+### 5.2 Entidades centrais
 
-    class Cliente {
-        +UUID id
-        +String cpf
-        +String nome
-        +String endereco
-        +UUID created_by
-        +DateTime created_at
-        +adicionarVeiculo(Veiculo v)
-    }
+- `usuarios`
+- `clientes`
+- `veiculos`
+- `mecanicos`
+- `ordens_servico`
+- `ordem_servico_servicos`
+- `ordem_servico_pecas_aplicadas`
 
-    class Veiculo {
-        +UUID id
-        +String placa
-        +String modelo
-        +String fabricante
-        +UUID created_by
-        +DateTime created_at
-    }
+## 6) DDL PostgreSQL
 
-    class OrdemServico {
-        +UUID id
-        +Enum status
-        +DateTime dataEntrada
-        +UUID created_by
-        +DateTime created_at
-        +abrirOS(Usuario atendente)
-        +finalizarOS()
-    }
+Arquivo: **`database/ddl.sql`**
 
-    class Orcamento {
-        +UUID id
-        +Decimal totalPecas
-        +Decimal totalMaoObra
-        +Boolean aprovado
-        +UUID created_by
-        +DateTime created_at
-        +calcularTotal()
-    }
+Inclui:
+- tipos e tabelas principais do domínio
+- relacionamentos obrigatórios
+- itens de serviços da OS com valor e tempo
+- peças aplicadas na OS
 
-    class CatalogoPeca {
-        +UUID id
-        +String sku
-        +int estoque
-        +UUID created_by
-        +DateTime created_at
-        +validarDisponibilidade()
-    }
+### Executar DDL
 
-    Usuario "1" -- "*" OrdemServico : registra
-    Cliente "1" -- "*" Veiculo : proprietario
-    Veiculo "1" -- "*" OrdemServico : objeto
-    OrdemServico "1" -- "*" Orcamento : possui
-    Orcamento "1" -- "*" CatalogoPeca : consome
-````
-```sql
--- ==========================================================
--- PROJETO DIDÁTICO: AUTOMANAGER (FATESG SENAI GO)
--- AUDITORIA COMPLETA: created_by, updated_by, datas
--- ==========================================================
+```bash
+psql -U <usuario> -d <banco> -f database/ddl.sql
+```
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+## 7) Frontend Angular
 
--- 1. TABELA DE USUÁRIOS
--- (Esta é a única que não referencia a si mesma no created_by para evitar recursão infinita no primeiro insert)
-CREATE TABLE usuarios (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    salt TEXT NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
+> Foi solicitado Angular 23.x, porém essa versão não está disponível no ambiente da entrega. Foi utilizada a versão estável mais próxima: **Angular 21.2.x**.
 
--- 2. TABELA DE CLIENTES
-CREATE TABLE clientes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cpf CHAR(11) NOT NULL UNIQUE,
-    nome VARCHAR(125) NOT NULL,
-    logradouro VARCHAR(125),
-    numero VARCHAR(7),
-    complemento VARCHAR(100),
-    bairro VARCHAR(100),
-    cidade VARCHAR(100),
-    estado CHAR(2),
-    cep VARCHAR(10),
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id),
-    updated_by UUID REFERENCES usuarios(id)
-);
+### 7.1 Pré-requisitos
 
--- 3. CONTATOS (Telefones e Emails)
-CREATE TABLE contatos_telefonicos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
-    tipo VARCHAR(20),
-    numero VARCHAR(50) NOT NULL,
-    preferencial BOOLEAN DEFAULT FALSE,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id)
-);
+- Node.js 20+
+- npm 10+
 
-CREATE TABLE contatos_email (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
-    tipo VARCHAR(20),
-    email VARCHAR(255) NOT NULL,
-    preferencial BOOLEAN DEFAULT FALSE,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id)
-);
+### 7.2 Executar projeto
 
--- 4. VEÍCULOS
-CREATE TABLE veiculos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cliente_id UUID NOT NULL REFERENCES clientes(id) ON DELETE CASCADE,
-    placa VARCHAR(20) NOT NULL UNIQUE,
-    modelo VARCHAR(55),
-    fabricante VARCHAR(55),
-    ano INTEGER,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id),
-    updated_by UUID REFERENCES usuarios(id)
-);
+```bash
+npm install
+npm start
+```
 
--- 5. ORDEM DE SERVIÇO
-CREATE TYPE ordem_status AS ENUM ('aberta','em_servico','aguardando_pecas','finalizada','cancelada');
+A aplicação sobe em `http://localhost:4200/`.
 
-CREATE TABLE ordem_servico (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    veiculo_id UUID NOT NULL REFERENCES veiculos(id) ON DELETE CASCADE,
-    data_entrada TIMESTAMPTZ DEFAULT now(),
-    data_prevista_saida TIMESTAMPTZ,
-    data_entrega TIMESTAMPTZ,
-    status ordem_status DEFAULT 'aberta',
-    descricao_problema TEXT,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id), -- Atendente/Mecânico que abriu
-    updated_by UUID REFERENCES usuarios(id)  -- Quem alterou o status
-);
+### 7.3 Build e testes
 
--- 6. CATÁLOGOS (Serviços e Peças)
-CREATE TABLE catalogo_servicos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    codigo VARCHAR(50) UNIQUE,
-    descricao TEXT NOT NULL,
-    preco_padrao NUMERIC(12,2),
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id)
-);
+```bash
+npm run build
+npm test
+```
 
-CREATE TABLE catalogo_pecas (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sku VARCHAR(100) UNIQUE,
-    descricao TEXT NOT NULL,
-    preco NUMERIC(12,2),
-    estoque INTEGER DEFAULT 0,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id),
-    updated_by UUID REFERENCES usuarios(id)
-);
+## 8) Estrutura de pastas
 
--- 7. ORÇAMENTOS
-CREATE TABLE orcamentos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    ordem_id UUID NOT NULL REFERENCES ordem_servico(id) ON DELETE CASCADE,
-    total NUMERIC(12,2) DEFAULT 0,
-    aprovado BOOLEAN DEFAULT FALSE,
-    -- Auditoria
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    created_by UUID REFERENCES usuarios(id),
-    updated_by UUID REFERENCES usuarios(id)
-);
+```text
+.
+├── database/
+│   └── ddl.sql
+├── src/
+│   └── app/
+│       ├── modelos/
+│       ├── paginas/
+│       │   ├── dashboard/
+│       │   ├── clientes/
+│       │   ├── veiculos/
+│       │   ├── mecanicos/
+│       │   └── ordens-servico/
+│       ├── services/
+│       │   └── dados-oficina.service.ts
+│       ├── app.routes.ts
+│       ├── app.ts
+│       └── app.html
+└── README.md
+```
 
--- 8. ITENS (Pecçs e Serviços)
-CREATE TABLE itens_orcamento_servico (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    orcamento_id UUID NOT NULL REFERENCES orcamentos(id) ON DELETE CASCADE,
-    servico_id UUID NOT NULL REFERENCES catalogo_servicos(id),
-    quantidade INTEGER DEFAULT 1,
-    preco_unit NUMERIC(12,2),
-    subtotal NUMERIC(12,2) GENERATED ALWAYS AS (quantidade * preco_unit) STORED
-);
+## 9) Rotas iniciais
 
-CREATE TABLE itens_orcamento_peca (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    orcamento_id UUID NOT NULL REFERENCES orcamentos(id) ON DELETE CASCADE,
-    peca_id UUID NOT NULL REFERENCES catalogo_pecas(id),
-    quantidade INTEGER NOT NULL,
-    preco_unit NUMERIC(12,2),
-    subtotal NUMERIC(12,2) GENERATED ALWAYS AS (quantidade * preco_unit) STORED
-);
+- `/dashboard`
+- `/clientes`
+- `/veiculos`
+- `/mecanicos`
+- `/ordens-servico`
 
--- 9. PAGAMENTOS
-CREATE TABLE pagamentos (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    ordem_id UUID REFERENCES ordem_servico(id),
-    valor NUMERIC(12,2) NOT NULL,
-    metodo VARCHAR(50),
-    data_pagamento TIMESTAMPTZ DEFAULT now(),
-    -- Auditoria
-    created_by UUID REFERENCES usuarios(id)
-);
+## 10) Fluxo acadêmico implementado
 
--- Índices principais
-CREATE INDEX idx_clientes_cpf ON clientes(cpf);
-CREATE INDEX idx_veiculos_placa ON veiculos(placa);
-CREATE INDEX idx_usuarios_email ON usuarios(email);
+1. Cadastrar cliente
+2. Cadastrar veículo vinculado ao cliente
+3. Cadastrar mecânico
+4. Abrir OS com vínculos de cliente/veículo/usuário/mecânico
+5. Adicionar serviços (descrição, valor, tempo)
+6. Adicionar peças aplicadas
+
+Dados estão em serviço **mock/in-memory** (`DadosOficinaService`) para demonstração sem backend real.
+
+## 11) Próximos passos sugeridos
+
+- Persistência real via API REST
+- Autenticação/autorização de usuários
+- Edição/exclusão completas (CRUD total)
+- Cálculo consolidado de totais da OS
+- Relatórios acadêmicos por período, cliente e mecânico
